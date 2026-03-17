@@ -1,0 +1,8 @@
+prism_central_ip = "10.38.10.50"
+prism_username   = "admin"
+prism_password   = "nutanix/4u"
+
+cluster_name   = "NTNX-C1-AHV"
+image_name     = "Rocky-9-GenericCloud-latest"
+subnet_name    = "VLAN-172-Mgmt"
+vm_name_prefix = "lab-"
