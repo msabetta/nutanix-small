@@ -1,0 +1,14 @@
+---
+prism:
+  endpoint: "10.38.10.50"
+  username: "admin"
+  password: "{{ vault_prism_password | default('nutanix/4u') }}"
+  validate_certs: false
+
+common_categories:
+  - key: "env"
+    value: "test"
+    desc: "Ambiente di test / lab"
+  - key: "owner"
+    value: "iac-team"
+    desc: "Gestito via IaC"

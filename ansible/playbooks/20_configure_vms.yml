@@ -1,0 +1,19 @@
+---
+- name: Configurazione guest VM (esempio)
+  hosts: tag_env_test    # ← se hai inventory dinamico con tag Nutanix
+  become: yes
+
+  tasks:
+    - name: Aggiorna pacchetti (Rocky/Alma)
+      dnf:
+        name: "*"
+        state: latest
+      when: ansible_os_family == "RedHat"
+
+    - name: Installa tool base
+      package:
+        name:
+          - vim
+          - git
+          - curl
+        state: present

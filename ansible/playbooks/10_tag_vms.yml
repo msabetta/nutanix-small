@@ -1,0 +1,32 @@
+---
+- name: Assegna categorie a VM esistenti
+  hosts: localhost
+  connection: local
+  gather_facts: false
+
+  collections:
+    - nutanix.ncp
+
+  vars:
+    vm_to_tag:
+      - ext_id: "vm-uuid-da-prism-12345678-...."
+        categories:
+          - key: "env"
+            value: "test"
+
+  tasks:
+    - name: Associa categoria a VM
+      nutanix.ncp.ntnx_vms_categories_v2:
+        nutanix_host:     "{{ prism.endpoint }}"
+        nutanix_username: "{{ prism.username }}"
+        nutanix_password: "{{ prism.password }}"
+        validate_certs:   "{{ prism.validate_certs }}"
+        vm_ext_id:        "{{ item.ext_id }}"
+        categories:
+          - key:   "{{ cat.key }}"
+            value: "{{ cat.value }}"
+        state: present
+      loop: "{{ vm_to_tag }}"
+      loop_control:
+        label: "{{ item.ext_id }}"
+      with_items: "{{ item.categories | default([]) }}"

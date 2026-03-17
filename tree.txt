@@ -1,0 +1,33 @@
+nutanix-small-project/
+├── README.md                 # spiegazione veloce + come partire
+├── .gitignore
+│
+├── terraform/                # provisioning VM, subnet, immagini, etc.
+│   ├── provider.tf
+│   ├── variables.tf
+│   ├── terraform.tfvars.example
+│   ├── main.tf               # o splitta in 01_globals.tf, 02_network.tf, 03_vms.tf
+│   ├── outputs.tf
+│   └── modules/              # solo se serve (per ora opzionale)
+│       └── vm_simple/        # modulo riutilizzabile per VM con categorie
+│           ├── main.tf
+│           ├── variables.tf
+│           └── outputs.tf
+│
+├── ansible/                  # day-2: categorie, policy, configurazione guest
+│   ├── ansible.cfg
+│   ├── inventory.yml         # statico o generato
+│   ├── group_vars/
+│   │   └── all.yml           # credenziali PC, variabili comuni
+│   ├── vault/                # .gitignore questo!
+│   │   └── secrets.yml       # ansible-vault encrypt
+│   └── playbooks/
+│       ├── 00_create_categories.yml
+│       ├── 10_tag_vms.yml
+│       └── 20_configure_vms.yml   # esempio hardening base
+│
+├── docs/                     # opzionale ma utile
+│   └── quick-start.md
+│
+└── scripts/                  # piccoli helper (opzionale)
+    └── get-pc-inventory.py   # estrae VM/cluster da API per inventory dinamico

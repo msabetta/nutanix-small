@@ -1,0 +1,24 @@
+---
+- name: Crea categorie base Nutanix
+  hosts: localhost
+  connection: local
+  gather_facts: false
+
+  collections:
+    - nutanix.ncp
+
+  tasks:
+    - name: Creazione categorie definite in group_vars
+      nutanix.ncp.ntnx_categories_v2:
+        nutanix_host:     "{{ prism.endpoint }}"
+        nutanix_username: "{{ prism.username }}"
+        nutanix_password: "{{ prism.password }}"
+        validate_certs:   "{{ prism.validate_certs }}"
+        key:              "{{ item.key }}"
+        values:
+          - value:       "{{ item.value }}"
+            description: "{{ item.desc | default('') }}"
+        state: present
+      loop: "{{ common_categories }}"
+      register: cat_create
+      changed_when: cat_create.changed
