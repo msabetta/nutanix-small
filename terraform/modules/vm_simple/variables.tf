@@ -20,7 +20,7 @@ variable "num_sockets" {
   default     = 1
 }
 
-variable "num_cores_per_socket" {
+variable "num_vcpus_per_socket" {
   description = "Core per socket"
   type        = number
   default     = 2

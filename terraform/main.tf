@@ -1,20 +1,23 @@
 # terraform/main.tf
+# ────────────────────────────────────────────────
 # Recupero dati esistenti
+# ────────────────────────────────────────────────
+
 data "nutanix_cluster" "main" {
   name = var.cluster_name
 }
 
+# Recupero immagine OS usando ext_id
 data "nutanix_image" "os" {
-  image_name = var.image_name
+  image_id = var.image_ext_id   # ID univoco dell'immagine
 }
 
-# Sottorete necessaria per le NIC (aggiunta - era mancante)
+# Recupero subnet usando ext_id
 data "nutanix_subnet" "primary" {
-  subnet_name = "your-subnet-name-here" # ← SOSTITUISCI con il nome reale della tua subnet
-  # Oppure usa filter se preferisci: filter = "name==VLAN-10"
+  subnet_id = var.subnet_ext_id # ID univoco della subnet
 }
 
-#Categoria di esempio (deve esistere già in Prism Central)
+# Categoria di esempio (deve esistere già in Prism Central)
 # data "nutanix_category_value_v2" "env_prod" {
 #   key   = "env"
 #   value = "prod"
@@ -25,16 +28,16 @@ data "nutanix_subnet" "primary" {
 # ────────────────────────────────────────────────
 
 module "web_server" {
-  source = "./modules/vm_simple"
+  source      = "./modules/vm_simple"
 
   name        = "web-test-01"
   description = "Server web di test creato con modulo semplice"
 
   cluster_uuid = data.nutanix_cluster.main.id
-  guest_os_id = var.guest_os_id
+  guest_os_id  = var.guest_os_id
 
   num_sockets          = 1
-  num_cores_per_socket = 4
+  num_vcpus_per_socket = 4
   memory_size_mib      = 8192 # 8 GB
 
   disks = [
@@ -79,4 +82,3 @@ module "web_server" {
 
   power_on = true
 }
-

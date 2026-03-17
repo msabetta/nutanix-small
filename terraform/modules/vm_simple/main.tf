@@ -5,9 +5,9 @@
 resource "nutanix_virtual_machine" "this" {
   name         = var.name
   cluster_uuid = var.cluster_uuid
-  num_vcpus      = var.num_vcpus
-  num_cores_per_vcpu = var.num_cores_per_socket
-  memory_mb      = var.memory_size_mib
+  num_sockets      = var.num_sockets
+  num_vcpus_per_socket = var.num_vcpus_per_socket
+  memory_size_mib      = var.memory_size_mib
 
   guest_os_id = var.guest_os_id
 

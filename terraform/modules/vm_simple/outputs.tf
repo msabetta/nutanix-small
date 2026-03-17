@@ -20,5 +20,5 @@ output "categories_applied" {
 
 output "primary_ip" {
   description = "Primo indirizzo IP rilevato (se presente)"
-  value       = try(nutanix_virtual_machine.this.nic_list[0].ip_endpoint_list[0].ip.value, null)
+  value = [for nic in nutanix_virtual_machine.this.nic_list_status : nic.ip_endpoint_list[0].ip]
 }

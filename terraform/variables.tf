@@ -51,3 +51,20 @@ variable "guest_os_id" {
   type        = string
   default     = "Ubuntu"
 }
+
+variable "num_vcpus_per_socket" {
+  description = "Core per socket"
+  type        = number
+  default     = 2
+}
+
+
+variable "image_ext_id" {
+  type        = string
+  description = "ID univoco dell'immagine OS in Prism"
+}
+
+variable "subnet_ext_id" {
+  type        = string
+  description = "ID univoco della subnet in Prism"
+}
