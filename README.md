@@ -73,3 +73,4 @@ Contributi benvenuti!
 
 * [Terraform](https://www.terraform.io/) – tool per IaC
 * [Ansible](https://www.ansible.com/) – tool per automazione e configurazione
+* [Nutanix for Developers](https://www.nutanix.dev/) - piattaforma tecnica dedicata agli sviluppatori e ai team di infrastruttura, dove puoi trovare risorse utili su tecnologie Nutanix, come documentazione API, esempi di codice, articoli tecnici, guide, laboratori pratici e strumenti di automazione.
