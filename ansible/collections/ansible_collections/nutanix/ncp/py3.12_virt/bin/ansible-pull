@@ -1,0 +1,8 @@
+#!/home/abhinav.bansal1/release_2.5.0_ansible/nutanix.ansible/py3.12_virt/bin/python3.12
+# -*- coding: utf-8 -*-
+import re
+import sys
+from ansible.cli.pull import main
+if __name__ == '__main__':
+    sys.argv[0] = re.sub(r'(-script\.pyw|\.exe)?$', '', sys.argv[0])
+    sys.exit(main())

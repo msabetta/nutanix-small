@@ -4,21 +4,28 @@
   connection: local
   gather_facts: false
 
+  vars:
+    ansible_python_interpreter: "/root/nutanix-small/venv/bin/python"
+
+  environment:
+    NUTANIX_USERNAME: "{{ prism.username }}"
+    NUTANIX_PASSWORD: "{{ prism.password }}"
+    NUTANIX_HOST: "{{ prism.endpoint }}"
+    NUTANIX_VALIDATE_CERTS: "{{ prism.validate_certs | string }}"
+
   collections:
     - nutanix.ncp
 
   tasks:
     - name: Creazione categorie definite in group_vars
       nutanix.ncp.ntnx_categories_v2:
-        nutanix_host:     "{{ prism.endpoint }}"
+        nutanix_host: "{{ prism.endpoint }}"
         nutanix_username: "{{ prism.username }}"
         nutanix_password: "{{ prism.password }}"
-        validate_certs:   "{{ prism.validate_certs }}"
-        key:              "{{ item.key }}"
-        values:
-          - value:       "{{ item.value }}"
-            description: "{{ item.desc | default('') }}"
+        validate_certs: "{{ prism.validate_certs }}"
+        key: "{{ item.key }}"
+        value: "{{ item.value }}"
+        description: "{{ item.desc | default('') }}"
         state: present
       loop: "{{ common_categories }}"
       register: cat_create
-      changed_when: cat_create.changed

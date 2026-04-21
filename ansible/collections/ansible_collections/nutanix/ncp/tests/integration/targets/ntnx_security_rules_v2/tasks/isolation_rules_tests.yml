@@ -1,0 +1,322 @@
+---
+- name: Start ntnx_security_rules_v2 isolation type security rules tests
+  ansible.builtin.debug:
+    msg: Start ntnx_security_rules_v2 isolation type security rules tests
+
+- name: Generate random names for security rules creation
+  ansible.builtin.set_fact:
+    random_name: "{{ query('community.general.random_string', numbers=false, special=false, length=12)[0] }}"
+
+- name: Set prefix name
+  ansible.builtin.set_fact:
+    prefix: ansible-nsr-
+
+- name: Set security rules name
+  ansible.builtin.set_fact:
+    rule_name_1: "{{ prefix }}{{ random_name }}1"
+
+################################################ Test Setup ################################################
+
+- name: Create categories for tests
+  nutanix.ncp.ntnx_categories_v2:
+    key: AnsibleSecurityRuleTest
+    value: AnsibleSecurityRuleTest{{ random_name }}{{ item }}
+    description: ansible test
+  register: results
+  loop: [0, 1, 2, 3]
+
+- name: Verify category creation status
+  ansible.builtin.assert:
+    that:
+      - item.response is defined
+      - item.changed == true
+      - item.ext_id is defined
+    fail_msg: Failed to create category
+    success_msg: Successfully created category
+  loop: "{{ results.results }}"
+
+- name: Set categories to be used in security rules
+  ansible.builtin.set_fact:
+    category1: "{{ results.results[0].response.ext_id }}"
+    category2: "{{ results.results[1].response.ext_id }}"
+    category3: "{{ results.results[2].response.ext_id }}"
+    category4: "{{ results.results[3].response.ext_id }}"
+
+################################################ Create tests ################################################
+
+- name: Generate spec for isolation type security rule creation using check mode
+  nutanix.ncp.ntnx_security_rules_v2:
+    name: "{{ rule_name_1 }}"
+    description: Ansible created rule
+    type: ISOLATION
+    policy_state: ENFORCE
+    scope: ALL_VLAN
+    is_hitlog_enabled: true
+    rules:
+      - description: Isolate group of categories
+        type: TWO_ENV_ISOLATION
+        spec:
+          two_env_isolation_rule_spec:
+            first_isolation_group:
+              - "{{ category1 }}"
+              - "{{ category2 }}"
+            second_isolation_group:
+              - "{{ category3 }}"
+              - "{{ category4 }}"
+  register: result
+  check_mode: true
+
+- name: Verify generated spec
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response.name == rule_name_1
+      - result.response.description == "Ansible created rule"
+      - result.response.type == "ISOLATION"
+      - result.response.state == "ENFORCE"
+      - result.response.scope == "ALL_VLAN"
+      - result.response.is_hitlog_enabled == true
+      - result.response.rules[0].description == "Isolate group of categories"
+      - result.response.rules[0].type == "TWO_ENV_ISOLATION"
+      - result.response.rules[0].spec.first_isolation_group[0] == category1
+      - result.response.rules[0].spec.first_isolation_group[1] == category2
+      - result.response.rules[0].spec.second_isolation_group[0] == category3
+      - result.response.rules[0].spec.second_isolation_group[1] == category4
+    fail_msg: Failed to generate spec for isolation type security rule creation
+    success_msg: Successfully generated spec for isolation type security rule creation
+
+- name: Create isolation type security rule
+  nutanix.ncp.ntnx_security_rules_v2:
+    name: "{{ rule_name_1 }}"
+    description: Ansible created rule
+    type: ISOLATION
+    policy_state: ENFORCE
+    scope: ALL_VLAN
+    is_hitlog_enabled: true
+    rules:
+      - description: Isolate group of categories
+        type: TWO_ENV_ISOLATION
+        spec:
+          two_env_isolation_rule_spec:
+            first_isolation_group:
+              - "{{ category1 }}"
+              - "{{ category2 }}"
+            second_isolation_group:
+              - "{{ category3 }}"
+              - "{{ category4 }}"
+  register: result
+
+- name: Verify creation status
+  ansible.builtin.assert:
+    that:
+      - result.changed == true
+      - result.failed == false
+      - result.response is defined
+      - result.ext_id is defined
+      - result.ext_id == result.response.ext_id
+      - result.task_ext_id is defined
+      - result.response.name == rule_name_1
+      - result.response.description == "Ansible created rule"
+      - result.response.type == "ISOLATION"
+      - result.response.state == "ENFORCE"
+      - result.response.scope == "ALL_VLAN"
+      - result.response.is_hitlog_enabled == true
+      - result.response.rules[0].description == "Isolate group of categories"
+      - result.response.rules[0].type == "TWO_ENV_ISOLATION"
+      - result.response.rules[0].spec.first_isolation_group[0] == category1
+      - result.response.rules[0].spec.first_isolation_group[1] == category2
+      - result.response.rules[0].spec.second_isolation_group[0] == category3
+      - result.response.rules[0].spec.second_isolation_group[1] == category4
+    fail_msg: Failed to create isolation type security rule
+    success_msg: Successfully created isolation type security rule
+
+- name: Set policy ext id
+  ansible.builtin.set_fact:
+    policy_ext_id1: "{{ result.ext_id }}"
+
+################################################ Update tests ################################################
+
+- name: Update isolation type security rule
+  nutanix.ncp.ntnx_security_rules_v2:
+    state: present
+    ext_id: "{{ policy_ext_id1 }}"
+    name: "{{ rule_name_1 }}-updated"
+    policy_state: MONITOR
+    is_hitlog_enabled: false
+    rules:
+      - description: Isolate group of categories -- updated
+        type: TWO_ENV_ISOLATION
+        spec:
+          two_env_isolation_rule_spec:
+            first_isolation_group:
+              - "{{ category1 }}"
+              - "{{ category3 }}"
+            second_isolation_group:
+              - "{{ category2 }}"
+              - "{{ category4 }}"
+  register: result
+
+- name: Verify update status
+  ansible.builtin.assert:
+    that:
+      - result.changed == true
+      - result.failed == false
+      - result.response.name == "{{ rule_name_1 }}-updated"
+      - result.response.state == "MONITOR"
+      - result.response.is_hitlog_enabled == false
+      - result.response.rules[0].description == "Isolate group of categories -- updated"
+      - result.response.rules[0].type == "TWO_ENV_ISOLATION"
+      - result.response.rules[0].spec.first_isolation_group[0] == category1
+      - result.response.rules[0].spec.first_isolation_group[1] == category3
+      - result.response.rules[0].spec.second_isolation_group[0] == category2
+      - result.response.rules[0].spec.second_isolation_group[1] == category4
+    fail_msg: Failed to update isolation type security rule
+    success_msg: Successfully updated isolation type security rule
+
+- name: Update security rule with same values to check idempotency
+  nutanix.ncp.ntnx_security_rules_v2:
+    state: present
+    ext_id: "{{ policy_ext_id1 }}"
+    name: "{{ rule_name_1 }}-updated"
+    policy_state: MONITOR
+    is_hitlog_enabled: false
+    rules:
+      - description: Isolate group of categories -- updated
+        type: TWO_ENV_ISOLATION
+        spec:
+          two_env_isolation_rule_spec:
+            first_isolation_group:
+              - "{{ category1 }}"
+              - "{{ category3 }}"
+            second_isolation_group:
+              - "{{ category2 }}"
+              - "{{ category4 }}"
+  register: result
+
+- name: Verify skip status
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.msg == "Nothing to change."
+      - result.skipped == true
+    fail_msg: Module failed to skip the update
+    success_msg: "Pass : return as expected"
+
+################################################ Test MULTI_ENV_ISOLATION with new attributes ################################################
+
+- name: Set second isolation rule name
+  ansible.builtin.set_fact:
+    rule_name_2: "{{ prefix }}{{ random_name }}2"
+
+- name: Create MULTI_ENV_ISOLATION rule with new attributes
+  nutanix.ncp.ntnx_security_rules_v2:
+    name: "{{ rule_name_2 }}"
+    description: Ansible MULTI_ENV_ISOLATION rule with new attributes
+    type: ISOLATION
+    policy_state: SAVE
+    scope: ALL_VLAN
+    is_hitlog_enabled: true
+    rules:
+      - description: Multi environment isolation with new attributes
+        type: MULTI_ENV_ISOLATION
+        spec:
+          multi_env_isolation_rule_spec:
+            spec:
+              all_to_all_isolation_group:
+                isolation_groups:
+                  - group_category_references:
+                      - "{{ category1 }}"
+                    group_category_associated_entity_type: VM
+                  - group_category_references:
+                      - "{{ category2 }}"
+                    group_category_associated_entity_type: VM
+                  - group_category_references:
+                      - "{{ category3 }}"
+                    group_category_associated_entity_type: VM
+  register: result
+
+- name: Set isolation groups category references
+  ansible.builtin.set_fact:
+    isolation_groups_category_references: >-
+      {{
+        result.response.rules[0].spec.spec.isolation_groups |
+        map(attribute='group_category_references') | map('first') | list
+      }}
+
+- name: Verify MULTI_ENV_ISOLATION rule creation
+  ansible.builtin.assert:
+    that:
+      - result.changed == true
+      - result.failed == false
+      - result.response is defined
+      - result.ext_id is defined
+      - result.response.name == rule_name_2
+      - result.response.type == "ISOLATION"
+      - result.response.rules[0].type == "MULTI_ENV_ISOLATION"
+      - result.response.rules[0].spec.spec.isolation_groups | length == 3
+      - result.response.rules[0].spec.spec.isolation_groups[0].group_category_associated_entity_type ==
+        result.response.rules[0].spec.spec.isolation_groups[1].group_category_associated_entity_type ==
+        result.response.rules[0].spec.spec.isolation_groups[2].group_category_associated_entity_type == "VM"
+      - result.response.rules[0].spec.spec.isolation_groups[0].group_category_references[0] in isolation_groups_category_references
+      - result.response.rules[0].spec.spec.isolation_groups[1].group_category_references[0] in isolation_groups_category_references
+      - result.response.rules[0].spec.spec.isolation_groups[2].group_category_references[0] in isolation_groups_category_references
+    fail_msg: Failed to create MULTI_ENV_ISOLATION rule with new attributes
+    success_msg: Successfully created MULTI_ENV_ISOLATION rule with new attributes
+
+- name: Set multi env policy ext id
+  ansible.builtin.set_fact:
+    policy_ext_id2: "{{ result.ext_id }}"
+
+######################################### Delete tests #########################################
+
+- name: Delete first security rule (TWO_ENV_ISOLATION)
+  nutanix.ncp.ntnx_security_rules_v2:
+    state: absent
+    ext_id: "{{ policy_ext_id1 }}"
+  register: result
+
+- name: Verify deletion status
+  ansible.builtin.assert:
+    that:
+      - result.changed == true
+      - result.failed == false
+      - result.response.status == "SUCCEEDED"
+    fail_msg: Failed to delete security rule
+    success_msg: Successfully deleted security rule
+
+- name: Delete second security rule (MULTI_ENV_ISOLATION)
+  nutanix.ncp.ntnx_security_rules_v2:
+    state: absent
+    ext_id: "{{ policy_ext_id2 }}"
+  register: result
+
+- name: Verify deletion status
+  ansible.builtin.assert:
+    that:
+      - result.changed == true
+      - result.failed == false
+      - result.response.status == "SUCCEEDED"
+    fail_msg: Failed to delete MULTI_ENV_ISOLATION security rule
+    success_msg: Successfully deleted MULTI_ENV_ISOLATION security rule
+
+######################################### Delete test setup created entities #########################################
+
+- name: Delete all categories
+  nutanix.ncp.ntnx_categories_v2:
+    state: absent
+    ext_id: "{{ item }}"
+  register: result
+  loop:
+    ["{{ category1 }}", "{{ category2 }}", "{{ category3 }}", "{{ category4 }}"]
+
+- name: Verify deletion status
+  ansible.builtin.assert:
+    that:
+      - item.changed == true
+      - item.failed == false
+    fail_msg: Failed to delete category
+    success_msg: Successfully deleted category
+  loop: "{{ result.results }}"

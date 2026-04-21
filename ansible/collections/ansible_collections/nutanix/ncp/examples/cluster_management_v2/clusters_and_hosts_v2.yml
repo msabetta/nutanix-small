@@ -1,0 +1,280 @@
+---
+# Summary:
+# This playbook will do:
+# 1. Create a cluster
+# 2. Reset username and password
+# 3. Register the cluster to Prism Central
+# 4. Fetch cluster using name
+# 5. Fetch cluster info using external ID
+# 6. Associate categories with cluster
+# 7. Update ntp servers, dns servers and smtp servers in cluster
+# 8. List all hosts
+# 9. List all hosts using filter
+# 10. Verify fetching host using external ID
+# 11. Fetch hosts of particular cluster
+# 12. Disassociate categories from cluster
+# 13. Destroy the cluster
+
+- name: Clusters CRUD playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: <pc_ip>
+      nutanix_username: <user>
+      nutanix_password: <pass>
+      validate_certs: false
+  tasks:
+    - name: Setting Variables
+      ansible.builtin.set_fact:
+        cluster_username: "username"
+        cluster_password: "password"
+        cluster_ext_id: "00061de6-4a87-6b06-185b-ac1f6b6f97e2"
+        host_ext_id: "0005f1e6-4a87-6b06-185b-ac1f6b6f97e2"
+        host_name: "host1"
+        category_ext_id: "c1e404a3-de7d-524a-ae7a-9ede9aba3421"
+        clusters:
+          pe_username: "username"
+          pe_password: "password"
+          nodes:
+            - cvm_ip: "10.0.0.1"
+          name: "cluster1"
+          config:
+            cluster_functions:
+              - "AOS"
+            auth_public_keys:
+              - name: "key1"
+                key: "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDQ6"
+            redundancy_factor_cluster_crud: 2
+            cluster_arch: "ARCH64"
+            fault_tolerance_state:
+              domain_awareness_level_cluster_crud: "DOMAIN_AWARE"
+          network:
+            virtual_ip: "10.0.0.2"
+            iscsi_ip: "10.0.0.6"
+            ntp_servers:
+              - "ntp1"
+              - "ntp2"
+              - "ntp3"
+              - "ntp4"
+            dns_servers:
+              - "dns1"
+              - "dns2"
+            smtp_server:
+              email_address: "test@test.com"
+              ip: "10.0.0.87"
+              port: 25
+              username: "test"
+              password: "test"
+              type: "SMTP"
+
+    - name: Set reset command
+      ansible.builtin.set_fact:
+        reset_command:
+          sshpass -p '{{ clusters.pe_password }}' ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null
+          {{ clusters.pe_username }}@{{ clusters.nodes[0].cvm_ip }}
+          /home/nutanix/prism/cli/ncli user reset-password user-name={{ cluster_username }} password={{ cluster_password }}
+
+    # we use this to get prism central external ID to use it to register the cluster
+    - name: List all clusters to get prism central external ID
+      nutanix.ncp.ntnx_clusters_info_v2:
+        filter: "config/clusterFunction/any(t:t eq Clustermgmt.Config.ClusterFunctionRef'PRISM_CENTRAL')"
+      register: result
+      ignore_errors: true
+
+    # here we set the prism central external ID
+    - name: Get prism central external ID
+      ansible.builtin.set_fact:
+        prism_central_external_id: "{{ result.response[0].ext_id }}"
+
+    # before creating cluster, we need to make sure that the cluster is not already created
+    - name: Discover unconfigured node
+      nutanix.ncp.ntnx_discover_unconfigured_nodes_v2:
+        address_type: "IPV4"
+        ip_filter_list:
+          - ipv4:
+              value: "{{ clusters.nodes[0].cvm_ip }}"
+      register: result
+      ignore_errors: true
+
+    - name: Run cluster create prechecks
+      nutanix.ncp.ntnx_clusters_v2:
+        name: "{{ clusters.name }}"
+        nodes:
+          node_list:
+            - controller_vm_ip:
+                ipv4:
+                  value: "{{ clusters.nodes[0].cvm_ip }}"
+        config:
+          cluster_function: "{{ clusters.config.cluster_functions }}"
+          authorized_public_key_list:
+            - name: "{{ clusters.config.auth_public_keys[0].name }}"
+              key: "{{ clusters.config.auth_public_keys[0].key }}"
+          redundancy_factor: "{{ clusters.config.redundancy_factor_cluster_crud }}"
+          cluster_arch: "{{ clusters.config.cluster_arch }}"
+          fault_tolerance_state:
+            domain_awareness_level: "{{ clusters.config.fault_tolerance_state.domain_awareness_level_cluster_crud }}"
+        network:
+          external_address:
+            ipv4:
+              value: "{{ clusters.network.virtual_ip }}"
+          external_data_service_ip:
+            ipv4:
+              value: "{{ clusters.network.iscsi_ip }}"
+          ntp_server_ip_list:
+            - fqdn:
+                value: "{{ clusters.network.ntp_servers[0] }}"
+            - fqdn:
+                value: "{{ clusters.network.ntp_servers[1] }}"
+            - fqdn:
+                value: "{{ clusters.network.ntp_servers[2] }}"
+            - fqdn:
+                value: "{{ clusters.network.ntp_servers[3] }}"
+          name_server_ip_list:
+            - ipv4:
+                value: "{{ clusters.network.dns_servers[0] }}"
+            - ipv4:
+                value: "{{ clusters.network.dns_servers[1] }}"
+          smtp_server:
+            email_address: "{{ clusters.network.smtp_server.email_address }}"
+            server:
+              ip_address:
+                ipv4:
+                  value: "{{ clusters.network.smtp_server.ip }}"
+              port: "{{ clusters.network.smtp_server.port }}"
+              username: "{{ clusters.network.smtp_server.username }}"
+              password: "{{ clusters.network.smtp_server.password }}"
+            type: "{{ clusters.network.smtp_server.type }}"
+        dryrun: true
+        timeout: 1800
+      register: result
+      ignore_errors: true
+
+    - name: Create cluster
+      nutanix.ncp.ntnx_clusters_v2:
+        name: "{{ clusters.name }}"
+        nodes:
+          node_list:
+            - controller_vm_ip:
+                ipv4:
+                  value: "{{ clusters.nodes[0].cvm_ip }}"
+        config:
+          cluster_function: "{{ clusters.config.cluster_functions }}"
+          redundancy_factor: "{{ clusters.config.redundancy_factor_cluster_crud }}"
+          cluster_arch: "{{ clusters.config.cluster_arch }}"
+          fault_tolerance_state:
+            domain_awareness_level: "{{ clusters.config.fault_tolerance_state.domain_awareness_level_cluster_crud }}"
+        timeout: 1800
+      register: result
+      ignore_errors: true
+
+    - name: Reset username and password
+      ansible.builtin.command: "{{ reset_command }}"
+      register: result
+      ignore_errors: true
+      changed_when: result.rc != 0
+
+    # here we register the cluster to prism central
+    - name: Run PE PC registration
+      nutanix.ncp.ntnx_pc_registration_v2:
+        ext_id: "{{ prism_central_external_id }}"
+        remote_cluster:
+          aos_remote_cluster:
+            remote_cluster:
+              address:
+                ipv4:
+                  value: "{{ clusters.nodes[0].cvm_ip }}"
+              credentials:
+                authentication:
+                  username: "{{ cluster_username }}"
+                  password: "{{ cluster_password }}"
+      register: result
+      ignore_errors: true
+
+    - name: Fetch cluster using name
+      nutanix.ncp.ntnx_clusters_info_v2:
+        filter: name eq '{{ clusters.name }}'
+      register: result
+      ignore_errors: true
+
+    - name: Fetch cluster info using external ID
+      nutanix.ncp.ntnx_clusters_info_v2:
+        ext_id: "{{ cluster_ext_id }}"
+      register: result
+      ignore_errors: true
+
+    - name: Associate categories with cluster
+      nutanix.ncp.ntnx_clusters_categories_v2:
+        cluster_ext_id: "{{ cluster_ext_id }}"
+        categories:
+          - "{{ category_ext_id }}"
+        state: present
+      register: result
+      ignore_errors: true
+
+    - name: Update ntp servers, dns servers and smtp servers in cluster
+      nutanix.ncp.ntnx_clusters_v2:
+        ext_id: "{{ cluster_ext_id }}"
+        network:
+          external_data_service_ip:
+            ipv4:
+              value: "{{ clusters.network.iscsi_ip }}"
+          ntp_server_ip_list:
+            - fqdn:
+                value: "{{ clusters.network.ntp_servers[0] }}"
+          name_server_ip_list:
+            - ipv4:
+                value: "{{ clusters.network.dns_servers[0] }}"
+          smtp_server:
+            email_address: "{{ clusters.network.smtp_server.email_address }}"
+            server:
+              ip_address:
+                ipv4:
+                  value: "{{ clusters.network.smtp_server.ip }}"
+              port: "{{ clusters.network.smtp_server.port }}"
+              username: "{{ clusters.network.smtp_server.username }}"
+              password: "{{ clusters.network.smtp_server.password }}"
+            type: STARTTLS
+        timeout: 1200
+      register: result
+      ignore_errors: true
+
+    - name: List all hosts
+      nutanix.ncp.ntnx_hosts_info_v2:
+      register: result
+      ignore_errors: true
+
+    - name: List all hosts using filter
+      nutanix.ncp.ntnx_hosts_info_v2:
+        filter: hostName eq '{{ host_name }}'
+      register: result
+      ignore_errors: true
+
+    - name: Verify fetching host using external ID
+      nutanix.ncp.ntnx_hosts_info_v2:
+        ext_id: "{{ host_ext_id }}"
+        cluster_ext_id: "{{ cluster_ext_id }}"
+      register: result
+      ignore_errors: true
+
+    - name: Fetch hosts of particular cluster
+      nutanix.ncp.ntnx_hosts_info_v2:
+        cluster_ext_id: "{{ cluster_ext_id }}"
+      register: result
+      ignore_errors: true
+
+    - name: Disassociate categories from cluster
+      nutanix.ncp.ntnx_clusters_categories_v2:
+        cluster_ext_id: "{{ cluster_ext_id }}"
+        categories:
+          - "{{ category_ext_id }}"
+        state: absent
+      register: result
+      ignore_errors: true
+
+    - name: Destroy the cluster
+      nutanix.ncp.ntnx_clusters_v2:
+        state: absent
+        ext_id: "{{ cluster_ext_id }}"
+      register: result
+      ignore_errors: true

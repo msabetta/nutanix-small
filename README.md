@@ -15,6 +15,14 @@ Assicurati di avere installato:
   ansible-galaxy collection install nutanix.ncp
   ```
 * Accesso a **Prism Central** con permessi sufficienti per creare VM, reti e categorie.
+* **Python ≥ 3.12.12**
+* Configurazione del **Virtual Environment** nella cartella principale del progetto (nutanix-small/)
+
+  ```bash
+  python -m venv venv
+  source venv/bin/activate
+  pip install ntnx-prism-py-client
+  ```
 
 ## 🔹 Struttura del progetto
 
