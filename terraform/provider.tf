@@ -10,7 +10,7 @@ terraform {
 }
 
 provider "nutanix" {
-  endpoint = var.prism_central_ip
+  endpoint = "192.168.119.128"
   username = var.prism_username
   password = var.prism_password
   insecure = true # ← solo per lab / self-signed cert – rimuovi in prod

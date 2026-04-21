@@ -10,6 +10,8 @@ Assicurati di avere installato:
 * **Ansible ≥ 2.14** + collection `nutanix.ncp`
 
   ```bash
+  ansible-galaxy collection install ansible.utils:==2.6.1
+  ansible-galaxy collection install -r ansible/collections/requirements.yml --no-cache
   ansible-galaxy collection install nutanix.ncp
   ```
 * Accesso a **Prism Central** con permessi sufficienti per creare VM, reti e categorie.
