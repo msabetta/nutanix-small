@@ -1,6 +1,6 @@
 ---
 prism:
-  endpoint: "10.38.10.50"
+  endpoint: "host.docker.internal"
   username: "admin"
   password: "{{ vault_prism_password | default('nutanix/4u') }}"
   validate_certs: false
