@@ -45,6 +45,27 @@ nutanix-small/
 * Crea categorie e assegna tag alle VM
 * Configura guest OS (es. installazione software, impostazioni di base)
 
+### Prism Lab
+
+Per i test del codice sviluppato su Ansible e Terraform viene proposta l'implementazione di un sito web di test (frontend + backend) nella cartella **prism-lab**.
+
+#### Startup
+
+Per avviare i container **prism-backend** e **prism-frontend** lanciare il seguente comando 
+
+```bash
+   docker compose up --build
+```
+
+#### Tear Down
+
+Per interrompere e rimuovere i container **prism-backend** e **prism-frontend** lanciare il seguente comando 
+
+```bash
+   docker compose down
+```
+
+
 ## 🔹 Flusso consigliato
 
 1. Copia il file di esempio e valorizza le variabili:
