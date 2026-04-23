@@ -65,6 +65,44 @@ Per interrompere e rimuovere i container **prism-backend** e **prism-frontend** 
    docker compose down
 ```
 
+### Nutanix Clone
+
+Seconda pagina web sperimentale (frontend + backend) per i test in locale.
+
+#### Backend
+
+Per installare il backend da terminale eseguire i seguenti comandi:
+
+```bash
+cd backend
+npm init -y
+npm install express cors
+```
+
+Per l'esecuzione del backend eseguire il seguente comando:
+
+```bash
+node server.js
+```
+
+#### Frontend
+
+Per installare il frontend da terminale eseguire i seguenti comandi:
+
+```bash
+cd frontend
+npm install
+npm install axios react-router-dom
+```
+Per l'esecuzione del backend eseguire il seguente comando:
+
+```bash
+npm run dev
+```
+
+#### Note addizionali
+
+Eseguire backend e frontend in due terminali distinti.
 
 ## 🔹 Flusso consigliato
 
@@ -105,3 +143,8 @@ Contributi benvenuti!
 * [Terraform](https://www.terraform.io/) – tool per IaC
 * [Ansible](https://www.ansible.com/) – tool per automazione e configurazione
 * [Nutanix for Developers](https://www.nutanix.dev/) - piattaforma tecnica dedicata agli sviluppatori e ai team di infrastruttura, dove puoi trovare risorse utili su tecnologie Nutanix, come documentazione API, esempi di codice, articoli tecnici, guide, laboratori pratici e strumenti di automazione.
+* [Node.js](https://nodejs.org/learn) - ambiente di esecuzione JavaScript lato server basato sul motore V8 che consente lo sviluppo backend
+* [Express.js 5.x API](https://expressjs.com/it/5x/api.html) - ramework minimalista per Node.js che semplifica la gestione di server web, API e routing tramite un sistema flessibile di middleware (versione 5.x delle API)
+* [Vite Dev Guide](https://vite.dev/guide/) - moderno build tool e dev server per applicazioni frontend rapide e ottimizzate 
+* [React Dev Guide](https://react.dev/learn) - libreria JavaScript per la creazione di interfacce utente component-based e reattive
+
